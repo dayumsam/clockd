@@ -6,7 +6,6 @@ import { Award } from 'lucide-react';
 import { UserWithStats, DailySession } from '@/types';
 import { LeaderboardEntry } from './ui/LeaderboardEntry';
 import { DailySessionItem } from './ui/DailySessionItem';
-// import { TimeChart } from './ui/TimeChart';
 import { format } from 'date-fns';
 import Header from './ui/Header';
 

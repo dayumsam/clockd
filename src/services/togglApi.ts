@@ -168,6 +168,26 @@ export const formatTimeWorkedToday = (timeEntries: TogglTimeEntry[]): string => 
 };
 
 /**
+ * Formats a decimal hours value to hours and minutes (e.g., "8:27" instead of "8.45")
+ * @param hours Decimal hours value
+ * @returns Formatted string in "H:MM" format
+ */
+export const formatHoursToHoursMinutes = (hours: number): string => {
+  // Calculate whole hours and remaining minutes
+  const wholeHours = Math.floor(hours);
+  const minutes = Math.round((hours - wholeHours) * 60);
+  
+  // Handle case where minutes round up to 60
+  if (minutes === 60) {
+    return `${wholeHours + 1}:00`;
+  }
+  
+  // Return formatted string with padding for minutes
+  return `${wholeHours}:${minutes.toString().padStart(2, '0')}`;
+};
+
+
+/**
  * Calculate and return both numeric hours and formatted time
  * @param timeEntries List of time entries from Toggl API
  * @returns Object with hours (decimal) and formatted (hours:minutes)
@@ -186,16 +206,29 @@ export const getTimeWorkedToday = (timeEntries: TogglTimeEntry[]): {
     return total + Math.abs(entry.duration);
   }, 0);
 
-  // Convert to decimal hours (with 1 decimal place)
-  const hours = Number((totalDurationInSeconds / 3600).toFixed(1));
+  // Convert to decimal hours 
+  const hours = totalDurationInSeconds / 3600;
   
-  // Convert to hours:minutes format
-  const totalMinutes = Math.floor(totalDurationInSeconds / 60);
-  const wholeHours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  const formatted = `${wholeHours}:${minutes.toString().padStart(2, '0')}`;
+  // Format as hours:minutes
+  const formatted = formatHoursToHoursMinutes(hours);
   
-  return { hours, formatted };
+  return { 
+    hours, 
+    formatted 
+  };
+};
+
+/**
+ * Determines if a user is active based on their time entries
+ * @param timeEntries Array of time entries
+ * @returns 'online' if there's an active entry, 'away' otherwise
+ */
+export const getUserActiveStatus = (timeEntries: TogglTimeEntry[]): 'online' | 'away' | 'offline' => {
+  // Check if there's any time entry without a stop time (active time entry)
+  const hasActiveEntry = timeEntries.some(entry => !entry.stop);
+  
+  // Return 'online' if there's an active entry, 'away' otherwise
+  return hasActiveEntry ? 'online' : 'away';
 };
 
 /**
@@ -209,12 +242,15 @@ export const processUserWithTogglData = async (user: User, timezone: string): Pr
     const timeEntries = await fetchTodayTimeEntries(user.apiToken, timezone);
     const timeWorked = getTimeWorkedToday(timeEntries);
 
+     // Determine user status based on active time entries
+     const status = getUserActiveStatus(timeEntries);
+
     return {
       id: user.id,
       name: user.name,
       avatar: user.avatar || "/api/placeholder/40/40",
       company: user.company,
-      status: getRandomStatus(),
+      status: status,
       hoursThisWeek: timeWorked.hours,
       progress: `+${timeWorked.hours.toFixed(1)}`,
     };
@@ -222,14 +258,4 @@ export const processUserWithTogglData = async (user: User, timezone: string): Pr
     console.error(`Error processing Toggl data for user ${user.name}:`, error);
     return null;
   }
-};
-
-/**
- * Generate a random online status for demo purposes
- * @returns {'online' | 'away' | 'offline'} - The random status
- */
-export const getRandomStatus = (): 'online' | 'away' | 'offline' => {
-  const statuses: ('online' | 'away' | 'offline')[] = ['online', 'away', 'offline'];
-  const randomIndex = Math.floor(Math.random() * statuses.length);
-  return statuses[randomIndex];
 };

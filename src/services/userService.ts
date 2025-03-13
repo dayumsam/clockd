@@ -39,10 +39,10 @@ export const getUsers = async (): Promise<User[]> => {
 // Get users with their Toggl stats
 export const getUsersWithStats = async (timezone: string): Promise<UserWithStats[]> => {
   try {
-    const activeUsers = await getUsers();
+    const users = await getUsers();
     
     // Decrypt API tokens and process with Toggl
-    const userStatsPromises = activeUsers.map(user => {
+    const userStatsPromises = users.map(user => {
       // Decrypt the API token before passing to Toggl
       const decryptedUser = {
         ...user,
