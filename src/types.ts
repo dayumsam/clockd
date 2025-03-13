@@ -6,9 +6,8 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
-    team: string;
+    company: string;
     apiToken: string;
-    weeklyTarget: number;
     isActive: boolean;
   }
   
@@ -17,21 +16,18 @@ export interface User {
     id: string;
     name: string;
     avatar?: string;
-    team: string;
+    company: string;
     status: 'online' | 'away' | 'offline';
     hoursThisWeek: number;
-    confirmedHours: string;
-    weeklyTarget: number;
-    achievement: string;
+    progress: string;
   }
   
   // Current user stats
   export interface CurrentUserStats {
     name: string;
     avatar?: string;
-    team: string;
+    company: string;
     hoursThisWeek: number;
-    weeklyTarget: number;
     hoursWorkedPercentage: number;
     projectCompletion: number;
     avgDailyHours: number;

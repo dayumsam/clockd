@@ -1,56 +1,73 @@
 // components/ui/Header.tsx
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { Clock, Calendar } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { CurrentUserStats } from '@/types';
 
 interface HeaderProps {
   currentUser?: CurrentUserStats | null;
-  activePage?: 'dashboard' | 'members';
+  activePage?: 'dashboard' | 'members' | 'admin';
+  isAdminAuthenticated?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  currentUser = null, 
-  activePage = 'dashboard' 
+  activePage = 'dashboard',
+  isAdminAuthenticated = false
 }) => {
+  const pathname = usePathname();
+  
+  // Check if the current path contains '/auth/'
+  const isAuthPath = pathname?.includes('/auth/') || false;
+  
+  // Fixed header style with transparent background
+  const headerStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    zIndex: 50,
+    backgroundColor: 'transparent'
+  } as React.CSSProperties;
+  
   return (
-    <header className="bg-transparent shadow-sm p-4 flex justify-between items-center">
-      <div className="flex items-center space-x-2">
-        <div className="bg-black text-white font-bold p-2 rounded">MM</div>
-        <span className="font-bold">MIX MASTERMIND</span>
-      </div>
-      
-      <nav className="hidden md:flex space-x-8">
-        <Link 
-          href="/" 
-          className={`${activePage === 'dashboard' ? 'border-b-2 border-black font-medium' : 'text-gray-500'}`}
-        >
-          Dashboard
-        </Link>
-        <Link 
-          href="/members" 
-          className={`${activePage === 'members' ? 'border-b-2 border-black font-medium' : 'text-gray-500'}`}
-        >
-          Members
-        </Link>
-      </nav>
-      
-      <div className="flex items-center space-x-4">
-        <button className="text-gray-500">
-          <Clock size={20} />
-        </button>
-        <button className="text-gray-500">
-          <Calendar size={20} />
-        </button>
-        {currentUser && (
-          <img 
-            src={currentUser.avatar || "/api/placeholder/40/40"} 
-            alt="Profile" 
-            className="w-8 h-8 rounded-full" 
-          />
-        )}
-      </div>
-    </header>
+    <div className='fixed'>
+      <header style={headerStyle} className="px-12 py-8 flex gap-12 items-center">
+        <div className="flex items-center space-x-4 font-oswald">
+          <div className="bg-background text-secondary font-bold p-2 rounded text-xl">8:8</div>
+          <span className="font-bold text-2xl text-background">Clockd</span>
+        </div>
+        
+        <nav className="hidden md:flex space-x-8">
+          <Link 
+            href="/" 
+            className={`${
+              isAuthPath && activePage === 'dashboard' 
+                ? `border-b-2 border-current text-background` 
+                : "text-background"
+            }`}
+          >
+            Dashboard
+          </Link>
+          {isAdminAuthenticated && (
+            <Link 
+              href="/admin" 
+              className={`${
+                isAuthPath && activePage === 'admin' 
+                  ? `border-b-2 border-current text-background` 
+                  : "text-background"
+              }`}
+            >
+              Admin
+            </Link>
+          )}
+        </nav>
+      </header>
+      {/* Add spacing element to prevent content from being hidden under the fixed header */}
+      <div className="h-24"></div>
+    </div>
   );
 };
 

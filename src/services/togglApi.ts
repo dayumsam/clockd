@@ -1,12 +1,21 @@
 // services/togglApi.ts
-import { User, TogglMeResponse, TogglTimeEntry, UserWithStats, CurrentUserStats } from '../types';
+import { User, TogglMeResponse, TogglTimeEntry, UserWithStats} from '../types';
 
-// Base64 encode API token for authentication
+/**
+ * Use API token directly without additional encoding
+ * @param {string} apiToken - The API token for authentication
+ * @returns {string} - The authorization header
+ */
 const getAuthHeader = (apiToken: string): string => {
-  return `Basic ${Buffer.from(`${apiToken}:api_token`).toString('base64')}`;
+  return `Basic ${apiToken}`;
 };
 
-// Function to fetch user info from Toggl
+/**
+ * Fetch user info from Toggl
+ * @param {string} apiToken - The API token for authentication
+ * @returns {Promise<TogglMeResponse>} - The user info response from Toggl
+ * @throws Will throw an error if the fetch operation fails
+ */
 export const fetchTogglUserInfo = async (apiToken: string): Promise<TogglMeResponse> => {
   try {
     const response = await fetch('https://api.track.toggl.com/api/v9/me', {
@@ -27,15 +36,20 @@ export const fetchTogglUserInfo = async (apiToken: string): Promise<TogglMeRespo
   }
 };
 
-// Function to fetch time entries from Toggl
+/**
+ * Fetch time entries from Toggl
+ * @param {string} apiToken - The API token for authentication
+ * @param {string} startDate - The start date for fetching time entries
+ * @returns {Promise<TogglTimeEntry[]>} - The time entries response from Toggl
+ * @throws Will throw an error if the fetch operation fails
+ */
 export const fetchTimeEntries = async (
   apiToken: string, 
   startDate: string, 
-  endDate: string
 ): Promise<TogglTimeEntry[]> => {
   try {
     const response = await fetch(
-      `https://api.track.toggl.com/api/v9/me/time_entries?start_date=${startDate}&end_date=${endDate}`, {
+      `https://api.track.toggl.com/api/v9/me/time_entries?start_date=${startDate}`, {
       headers: {
         'Authorization': getAuthHeader(apiToken),
         'Content-Type': 'application/json',
@@ -53,83 +67,156 @@ export const fetchTimeEntries = async (
   }
 };
 
-// Calculate hours worked from time entries
-export const calculateHoursWorked = (timeEntries: TogglTimeEntry[]): number => {
+/**
+ * Get today's start and end timestamps in the client's timezone in RFC3339 format and then converted into seconds
+ * @param {string} timezone - The client's timezone
+ * @returns {Object} - An object containing start and end timestamps in seconds
+ */
+export const getTodayTimestamps = (timezone: string): { startTimestamp: number, endTimestamp: number } => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0)
+  const startOfDay = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+
+  const endOfDay = new Date(startOfDay);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const startTimestampRFC3339 = startOfDay.toISOString();
+  const endTimestampRFC3339 = endOfDay.toISOString();
+
+  return {
+    startTimestamp: Math.floor(new Date(startTimestampRFC3339).getTime() / 1000),
+    endTimestamp: Math.floor(new Date(endTimestampRFC3339).getTime() / 1000),
+  };
+};
+
+/**
+ * Fetch time entries for today from Toggl
+ * @param {string} apiToken - The API token for authentication
+ * @param {string} timezone - The client's timezone
+ * @returns {Promise<TogglTimeEntry[]>} - The time entries response from Toggl
+ * @throws Will throw an error if the fetch operation fails
+ */
+export const fetchTodayTimeEntries = async (
+  apiToken: string,
+  timezone: string
+): Promise<TogglTimeEntry[]> => {
+  const { startTimestamp, endTimestamp } = getTodayTimestamps(timezone);
+
+  try {
+    const response = await fetch(
+      `https://api.track.toggl.com/api/v9/me/time_entries?since=${startTimestamp}&until=${endTimestamp}`, {
+      headers: {
+        'Authorization': getAuthHeader(apiToken),
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch time entries: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching Toggl time entries:', error);
+    throw error;
+  }
+};
+
+/**
+ * Calculate hours worked from time entries
+ * @param timeEntries List of time entries from Toggl API
+ * @returns Number of hours worked with 1 decimal place
+ */
+export const calculateHoursWorkedToday = (timeEntries: TogglTimeEntry[]): number => {
+  // Calculate total duration in seconds
   const totalDurationInSeconds = timeEntries.reduce((total, entry) => {
-    // If entry is running (no stop time), we calculate duration until now
-    if (!entry.stop) {
+    if (!entry.stop || entry.duration < 0) {
       const startTime = new Date(entry.start).getTime();
       const now = new Date().getTime();
       return total + ((now - startTime) / 1000);
     }
-    // For completed entries, use the duration field (which is in seconds)
     return total + Math.abs(entry.duration);
   }, 0);
 
-  // Convert seconds to hours with 1 decimal point
+  // Convert to decimal hours with 1 decimal place
   return Number((totalDurationInSeconds / 3600).toFixed(1));
 };
 
-// Function to get this week's start and end dates
-export const getWeekDates = (): { startDate: string, endDate: string } => {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const startDate = new Date(now);
+/**
+ * Calculate and format time worked today as hours:minutes
+ * @param timeEntries List of time entries from Toggl API
+ * @returns Formatted string in hours:minutes format (e.g. "0:28" or "1:45")
+ */
+export const formatTimeWorkedToday = (timeEntries: TogglTimeEntry[]): string => {
+  // Calculate total duration in seconds
+  const totalDurationInSeconds = timeEntries.reduce((total, entry) => {
+    if (!entry.stop || entry.duration < 0) {
+      const startTime = new Date(entry.start).getTime();
+      const now = new Date().getTime();
+      return total + ((now - startTime) / 1000);
+    }
+    return total + Math.abs(entry.duration);
+  }, 0);
+
+  // Convert to hours and minutes
+  const totalMinutes = Math.floor(totalDurationInSeconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
   
-  // Adjust to get Monday (1) as the start of the week
-  // If today is Sunday (0), go back 6 days
-  if (dayOfWeek === 0) {
-    startDate.setDate(now.getDate() - 6);
-  } else {
-    // Otherwise go back (day of week - 1) days
-    startDate.setDate(now.getDate() - (dayOfWeek - 1));
-  }
-  
-  startDate.setHours(0, 0, 0, 0);
-  
-  const endDate = new Date(now);
-  endDate.setHours(23, 59, 59, 999);
-  
-  return {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-  };
+  // Format as hours:minutes with leading zero for minutes if needed
+  return `${hours}:${minutes.toString().padStart(2, '0')}`;
 };
 
-// Generate a random online status for demo purposes
-// In a real app, you would determine this based on recent activity
-export const getRandomStatus = (): 'online' | 'away' | 'offline' => {
-  const statuses: ('online' | 'away' | 'offline')[] = ['online', 'away', 'offline'];
-  const randomIndex = Math.floor(Math.random() * statuses.length);
-  return statuses[randomIndex];
+/**
+ * Calculate and return both numeric hours and formatted time
+ * @param timeEntries List of time entries from Toggl API
+ * @returns Object with hours (decimal) and formatted (hours:minutes)
+ */
+export const getTimeWorkedToday = (timeEntries: TogglTimeEntry[]): { 
+  hours: number; 
+  formatted: string; 
+} => {
+  // Calculate total duration in seconds
+  const totalDurationInSeconds = timeEntries.reduce((total, entry) => {
+    if (!entry.stop || entry.duration < 0) {
+      const startTime = new Date(entry.start).getTime();
+      const now = new Date().getTime();
+      return total + ((now - startTime) / 1000);
+    }
+    return total + Math.abs(entry.duration);
+  }, 0);
+
+  // Convert to decimal hours (with 1 decimal place)
+  const hours = Number((totalDurationInSeconds / 3600).toFixed(1));
+  
+  // Convert to hours:minutes format
+  const totalMinutes = Math.floor(totalDurationInSeconds / 60);
+  const wholeHours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const formatted = `${wholeHours}:${minutes.toString().padStart(2, '0')}`;
+  
+  return { hours, formatted };
 };
 
-// Process user data with Toggl stats
-export const processUserWithTogglData = async (user: User): Promise<UserWithStats | null> => {
+/**
+ * Process user data with Toggl stats
+ * @param {User} user - The user object
+ * @param {string} timezone - The client's timezone
+ * @returns {Promise<UserWithStats | null>} - The user object with stats or null if an error occurs
+ */
+export const processUserWithTogglData = async (user: User, timezone: string): Promise<UserWithStats | null> => {
   try {
-    const { startDate, endDate } = getWeekDates();
-    const timeEntries = await fetchTimeEntries(user.apiToken, startDate, endDate);
-    const hoursThisWeek = calculateHoursWorked(timeEntries);
-    
-    // Calculate achievement (difference from weekly target)
-    const achievementValue = hoursThisWeek - user.weeklyTarget;
-    const achievement = achievementValue >= 0 
-      ? `+${achievementValue.toFixed(1)}` 
-      : achievementValue.toFixed(1);
-    
-    // Format confirmed hours as "X/Y hours confirmed"
-    const confirmedHours = `${Math.floor(hoursThisWeek)}/${user.weeklyTarget} hours confirmed`;
-    
+    const timeEntries = await fetchTodayTimeEntries(user.apiToken, timezone);
+    const timeWorked = getTimeWorkedToday(timeEntries);
+
     return {
       id: user.id,
       name: user.name,
       avatar: user.avatar || "/api/placeholder/40/40",
-      team: user.team,
-      status: getRandomStatus(), // For demo, in production we'd determine this from activity
-      hoursThisWeek,
-      confirmedHours,
-      weeklyTarget: user.weeklyTarget,
-      achievement,
+      company: user.company,
+      status: getRandomStatus(),
+      hoursThisWeek: timeWorked.hours,
+      progress: `+${timeWorked.hours.toFixed(1)}`,
     };
   } catch (error) {
     console.error(`Error processing Toggl data for user ${user.name}:`, error);
@@ -137,29 +224,12 @@ export const processUserWithTogglData = async (user: User): Promise<UserWithStat
   }
 };
 
-// Calculate current user stats
-export const calculateCurrentUserStats = (
-  user: User, 
-  timeEntries: TogglTimeEntry[]
-): CurrentUserStats => {
-  const hoursThisWeek = calculateHoursWorked(timeEntries);
-  const hoursWorkedPercentage = Math.round((hoursThisWeek / user.weeklyTarget) * 100);
-  
-  // Get daily average by dividing by 5 work days
-  const avgDailyHours = Number((hoursThisWeek / 5).toFixed(1));
-  
-  // This would come from project completion data in a real app
-  // We're using a placeholder value here
-  const projectCompletion = 85;
-  
-  return {
-    name: user.name,
-    avatar: user.avatar || "/api/placeholder/40/40",
-    team: user.team,
-    hoursThisWeek,
-    weeklyTarget: user.weeklyTarget,
-    hoursWorkedPercentage,
-    projectCompletion,
-    avgDailyHours,
-  };
+/**
+ * Generate a random online status for demo purposes
+ * @returns {'online' | 'away' | 'offline'} - The random status
+ */
+export const getRandomStatus = (): 'online' | 'away' | 'offline' => {
+  const statuses: ('online' | 'away' | 'offline')[] = ['online', 'away', 'offline'];
+  const randomIndex = Math.floor(Math.random() * statuses.length);
+  return statuses[randomIndex];
 };
