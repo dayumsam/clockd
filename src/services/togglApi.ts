@@ -1,5 +1,12 @@
 // services/togglApi.ts
 import { User, TogglMeResponse, TogglTimeEntry, UserWithStats} from '../types';
+import dayjs from 'dayjs';
+import utcPlugin from 'dayjs/plugin/utc';
+import timezonePlugin from 'dayjs/plugin/timezone';
+import { togglTesting } from '../config/testingConfig';
+
+dayjs.extend(utcPlugin);
+dayjs.extend(timezonePlugin);
 
 /**
  * Use API token directly without additional encoding
@@ -68,26 +75,38 @@ export const fetchTimeEntries = async (
 };
 
 /**
- * Get today's start and end timestamps in the client's timezone in RFC3339 format and then converted into seconds
- * @param {string} timezone - The client's timezone
+ * Get today's start and end timestamps in the client's timezone, converted to UTC and returned as seconds since epoch
+ * @param {string} timezone - The client's timezone (e.g., 'America/New_York', 'Europe/London')
  * @returns {Object} - An object containing start and end timestamps in seconds
  */
 export const getTodayTimestamps = (timezone: string): { startTimestamp: number, endTimestamp: number } => {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0)
-  const startOfDay = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-
-  const endOfDay = new Date(startOfDay);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const startTimestampRFC3339 = startOfDay.toISOString();
-  const endTimestampRFC3339 = endOfDay.toISOString();
-
+  // Get today's date in the specified timezone
+  const todayInTimezone = dayjs().tz(timezone);
+  
+  // Create start of day (00:00:00) in the specified timezone
+  const startOfDayInTimezone = todayInTimezone.startOf('day');
+  
+  // Create end of day (23:59:59.999) in the specified timezone
+  const endOfDayInTimezone = todayInTimezone.endOf('day');
+  
+  if (process.env.NODE_ENV === 'development' && togglTesting.logTimestamps) {
+    console.table({
+      'Server time': dayjs().format(),
+      [`Today in ${timezone}`]: todayInTimezone.format(),
+      [`Start of day in ${timezone}`]: startOfDayInTimezone.format(),
+      [`End of day in ${timezone}`]: endOfDayInTimezone.format(),
+      'Start of day in UTC': startOfDayInTimezone.utc().format(),
+      'End of day in UTC': endOfDayInTimezone.utc().format(),
+    });
+  }
+  
+  // Convert to UTC and then to seconds since epoch
   return {
-    startTimestamp: Math.floor(new Date(startTimestampRFC3339).getTime() / 1000),
-    endTimestamp: Math.floor(new Date(endTimestampRFC3339).getTime() / 1000),
+    startTimestamp: Math.floor(startOfDayInTimezone.valueOf() / 1000),
+    endTimestamp: Math.floor(endOfDayInTimezone.valueOf() / 1000),
   };
 };
+
 
 /**
  * Fetch time entries for today from Toggl
@@ -102,6 +121,9 @@ export const fetchTodayTimeEntries = async (
 ): Promise<TogglTimeEntry[]> => {
   const { startTimestamp, endTimestamp } = getTodayTimestamps(timezone);
 
+  if (process.env.NODE_ENV === 'development' && togglTesting.logApiUrls) {
+    console.log(`https://api.track.toggl.com/api/v9/me/time_entries?since=${startTimestamp}&until=${endTimestamp}`);
+  }
   try {
     const response = await fetch(
       `https://api.track.toggl.com/api/v9/me/time_entries?since=${startTimestamp}&until=${endTimestamp}`, {
@@ -196,6 +218,11 @@ export const getTimeWorkedToday = (timeEntries: TogglTimeEntry[]): {
   hours: number; 
   formatted: string; 
 } => {
+
+  if (process.env.NODE_ENV === 'development' && togglTesting.logTimeEntries) {
+    console.table(timeEntries);
+  }
+  
   // Calculate total duration in seconds
   const totalDurationInSeconds = timeEntries.reduce((total, entry) => {
     if (!entry.stop || entry.duration < 0) {
@@ -211,6 +238,10 @@ export const getTimeWorkedToday = (timeEntries: TogglTimeEntry[]): {
   
   // Format as hours:minutes
   const formatted = formatHoursToHoursMinutes(hours);
+
+  if (process.env.NODE_ENV === 'development' && togglTesting.logHoursWorked) {
+    console.log(`Total hours worked today: ${hours} (${formatted})`);
+  }
   
   return { 
     hours, 
@@ -251,6 +282,7 @@ export const processUserWithTogglData = async (user: User, timezone: string): Pr
       avatar: user.avatar || "/api/placeholder/40/40",
       company: user.company,
       status: status,
+      hoursToday: timeWorked.hours,
       hoursThisWeek: timeWorked.hours,
       progress: `+${timeWorked.hours.toFixed(1)}`,
     };

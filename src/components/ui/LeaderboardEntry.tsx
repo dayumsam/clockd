@@ -11,7 +11,7 @@ interface LeaderboardEntryProps {
 }
 
 export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, index }) => {
-  const readableTime = formatHoursHumanReadable(entry.hoursThisWeek);
+  const readableTime = formatHoursHumanReadable(entry.hoursToday);
   
   // Position styling logic
   const getPositionStyle = (position: number) => {
@@ -31,7 +31,7 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, index
   const isTopThree = index < 3;
 
   return (
-    <div className={`bg-white rounded-3xl py-4 px-8 flex justify-between items-center shadow-sm hover:shadow-md transition-shadow ${isTopThree ? 'border-l-4 border-' + (index === 0 ? 'amber-500' : index === 1 ? 'slate-400' : 'amber-700') : ''}`}>
+    <div className={`bg-white rounded-3xl py-4 px-8 flex justify-between items-center shadow-sm hover:shadow-md transition-shadow border-l-4 border-secondary ${isTopThree ? ' border-' + (index === 0 ? 'amber-500' : index === 1 ? 'slate-400' : 'amber-700') : ''}`}>
       <div className="flex items-center space-x-8">
         <div className={`${positionStyle} text-3xl font-bold font-oswald rounded-full ${isTopThree ? 'w-12 h-12 flex items-center justify-center' : ''}`}>
           {String(index + 1).padStart(2, '0')}
@@ -64,7 +64,7 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, index
         </div>
         
         <div>
-          <div className="font-medium text-xl font-lexend">{entry.name}</div>
+          <div className="font-medium text-xl font-lexend capitalize">{entry.name}</div>
           <div className="text-gray-500 text-sm">{entry.company}</div>
         </div>
       </div>

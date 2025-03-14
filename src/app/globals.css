@@ -8,23 +8,17 @@
 
 
 @theme {
-  
   --font-lexend: "Lexend", "sans-serif";
   --font-oswald:  "Oswald", "sans-serif";
   --font-sans: "Lexend", "sans-serif";
 
-  --color-primary: #dd726c;
-  /* --color-primary-light { background-color: #e5908b; }
-  --color-primary-dark { background-color: #c5554f; } */
+  --color-primary: #f36c6c;
 
-  --color-secondary: #3a515f;
-  /* --color-secondary-light { background-color: #516a7a; }
-  --color-secondary-dark { background-color: #2c3e4a; } */
+  --color-secondary: #2e525e;
+  --color-secondary-light: #43646b;
 
   --color-background: #f0eae0;
-  
-  /* --color-background-light { background-color: #f7f4ee; }
-  --color-background-dark { background-color: #e5dfd2; } */
+  --color-background-light: #f3e9e1;
 }
 
 @media (prefers-color-scheme: dark) {

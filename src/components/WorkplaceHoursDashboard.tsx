@@ -68,7 +68,7 @@ const WorkplaceHoursDashboard: React.FC = () => {
     try {
       setIsLoading(true);
       console.log(new Date().toISOString());
-      const response = await fetch(`/api/leaderboard?date=${new Date()}`);
+      const response = await fetch(`/api/leaderboard`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch leaderboard data');
@@ -172,7 +172,7 @@ const WorkplaceHoursDashboard: React.FC = () => {
 
         {/* Right Column - Stats */}
         <div className="w-full lg:w-1/3">
-          <div className="bg-white rounded-3xl p-6 shadow-sm h-full">
+          <div className="bg-white border-l-4 border-secondary shadow-sm hover:shadow-md transition-shadow rounded-3xl p-6 shadow-sm h-full">
             <h3 className="text-xl font-bold mb-4">Upcoming Events:</h3>
             <div className="space-y-4">
               {dailySessions.map((session, index) => (

@@ -4,7 +4,7 @@
 import WorkplaceHoursDashboard from '@/components/WorkplaceHoursDashboard';
 import { useEffect } from 'react';
 
-const REFRESH_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
+const REFRESH_INTERVAL = 1 * 60 * 1000; // 1 minute
 
 export default function TVDashboard() {
   // Set up auto-refresh

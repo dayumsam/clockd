@@ -18,6 +18,7 @@ export interface User {
     avatar?: string;
     company: string;
     status: 'online' | 'away' | 'offline';
+    hoursToday: number;
     hoursThisWeek: number;
     progress: string;
   }

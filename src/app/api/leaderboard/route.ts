@@ -4,7 +4,7 @@ import { getUsersWithStats } from '@/services/userService';
 
 export async function GET() {
   try {
-    const usersWithStats = await getUsersWithStats('America/New_York'); // Pass the timezone
+    const usersWithStats = await getUsersWithStats('America/New_York');
     return NextResponse.json({ 
       success: true, 
       data: usersWithStats 

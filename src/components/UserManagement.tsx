@@ -213,7 +213,7 @@ const UserManagement: React.FC = () => {
         <div className="flex gap-2">
           <button 
             onClick={fetchUsers} 
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md flex items-center"
+            className="bg-gray-100 cursor-pointer hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md flex items-center"
             disabled={isLoading}
           >
             <RefreshCw size={18} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -221,7 +221,7 @@ const UserManagement: React.FC = () => {
           </button>
           <button 
             onClick={handleAddNew} 
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
+            className="bg-secondary hover:bg-secondary-light cursor-pointer text-white px-4 py-2 rounded-md flex items-center"
             disabled={isAddingUser || isLoading}
           >
             <Plus size={18} className="mr-2" />
@@ -238,7 +238,7 @@ const UserManagement: React.FC = () => {
       
       {/* Add/Edit Form */}
       {(isAddingUser || editingId) && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
           <h2 className="text-xl font-bold mb-4">
             {editingId ? 'Edit User' : 'Add New User'}
           </h2>
@@ -338,7 +338,7 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-xl border-l-4 border-secondary shadow overflow-hidden">
           {users.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-500 mb-4">No users found</p>
@@ -375,7 +375,7 @@ const UserManagement: React.FC = () => {
                               />
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="text-xl font-medium text-gray-900 capitalize">{user.name}</div>
                           <div className="text-sm text-gray-500">{user.email}</div>
                         </div>
                       </div>

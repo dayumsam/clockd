@@ -35,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <div className='fixed'>
       <header style={headerStyle} className="px-12 py-8 flex gap-12 items-center">
-        <div className="flex items-center space-x-4 font-oswald">
+        <div className="flex items-center space-x-4 font-oswald ">
           <div className="bg-background text-secondary font-bold p-2 rounded text-xl">8:8</div>
           <span className="font-bold text-2xl text-background">Clockd</span>
         </div>
