@@ -25,10 +25,35 @@ export async function POST(request: Request) {
       );
     }
 
-    // Basic password validation (at least 8 characters)
-    if (password.length < 8) {
+    // Test Toggl API credentials before proceeding
+    try {
+      const togglAuthHeader = `Basic ${Buffer.from(`${email}:${password}`).toString('base64')}`;
+      const togglResponse = await fetch('https://api.track.toggl.com/api/v9/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': togglAuthHeader,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (togglResponse.status === 403 || togglResponse.status === 401) {
+        return NextResponse.json(
+          { message: 'Invalid Toggl credentials. Please check your email and password.' },
+          { status: 401 }
+        );
+      }
+
+      if (!togglResponse.ok) {
+        throw new Error(`Toggl API returned ${togglResponse.status}: ${await togglResponse.text()}`);
+      }
+
+      // Optionally get the user data from Toggl
+      const togglUser = await togglResponse.json();
+      console.log('Toggl user verified:', togglUser.email || togglUser.id);
+    } catch (togglError) {
+      console.error('Error testing Toggl credentials:', togglError);
       return NextResponse.json(
-        { message: 'Password must be at least 8 characters long' },
+        { message: 'Failed to verify Toggl credentials. Please try again.' },
         { status: 400 }
       );
     }

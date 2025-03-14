@@ -124,6 +124,7 @@ const WorkplaceHoursDashboard: React.FC = () => {
       <div className="flex flex-col lg:flex-row p-12 gap-8 h-full" >
 
         {/* Left Column - Leaderboard */}
+        {/* TODO: make a component */}
         <div className="w-full lg:w-5/6">
           <div className="flex items-center gap-8 justify-between mb-8">
             <h2 className="text-3xl  font-bold flex items-center">
@@ -171,8 +172,10 @@ const WorkplaceHoursDashboard: React.FC = () => {
         </div>
 
         {/* Right Column - Stats */}
+        {/* TODO: Connect to google calaendar */}
+        {/* TODO: have weekly leaderboard and events */}
         <div className="w-full lg:w-1/3">
-          <div className="bg-white border-l-4 border-secondary shadow-sm hover:shadow-md transition-shadow rounded-3xl p-6 shadow-sm h-full">
+          <div className="bg-white border-l-4 border-secondary shadow-sm hover:shadow-md transition-shadow rounded-3xl p-6 shadow-sm  ">
             <h3 className="text-xl font-bold mb-4">Upcoming Events:</h3>
             <div className="space-y-4">
               {dailySessions.map((session, index) => (
