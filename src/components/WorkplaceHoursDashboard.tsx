@@ -12,6 +12,8 @@ import Header from './ui/Header';
 // Auto-refresh interval in milliseconds (1 hour)
 const REFRESH_INTERVAL = 60 * 60 * 1000;
 
+// TODO: think about registration or send email on invite.  
+
 const WorkplaceHoursDashboard: React.FC = () => {
     const [leaderboardData, setLeaderboardData] = useState<UserWithStats[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -115,7 +117,7 @@ const WorkplaceHoursDashboard: React.FC = () => {
       <section className="bg-secondary text-background p-8 md:p-12 md:pt-30 h-[350px] rounded-b-[3rem] flex items-center">
 
         <div className="max-w-4xl">
-          <h1 className="text-5xl md:text-6xl font-black font-lexend mb-2">MIX<br/>Mastermind</h1>
+          <h1 className="text-5xl md:text-6xl font-black font-lexend mb-2">MIX<br/>Incubator</h1>
         </div>
 
       </section>

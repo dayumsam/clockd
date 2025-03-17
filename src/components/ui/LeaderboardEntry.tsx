@@ -2,7 +2,7 @@
 import React from 'react';
 import Image from 'next/image'
 import { UserWithStats } from '@/types';
-import { ArrowUpRight } from 'lucide-react';
+// import { ArrowUpRight } from 'lucide-react';
 import { formatHoursHumanReadable } from '@/utils/timeUtils';
 
 interface LeaderboardEntryProps {
@@ -74,7 +74,7 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, index
           {readableTime}
         </div>
         
-        <div className={`flex items-center ${
+        {/* <div className={`flex items-center ${
           entry.progress.startsWith('+') ? 'text-green-500' : 'text-red-500'
         }`}>
           {entry.progress.startsWith('+') ? (
@@ -83,7 +83,7 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, index
             <ArrowUpRight size={16} className="mr-1 transform rotate-180" />
           )}
           {entry.progress}h
-        </div>
+        </div> */}
       </div>
     </div>
   );
